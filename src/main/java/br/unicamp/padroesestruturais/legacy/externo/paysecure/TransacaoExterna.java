@@ -1,4 +1,4 @@
-package br.unicamp.padroesestruturais.legacy.externo;
+package br.unicamp.padroesestruturais.legacy.externo.paysecure;
 
 /**
  * Representa o retorno de uma transacao processada pelo SDK PaySecure.

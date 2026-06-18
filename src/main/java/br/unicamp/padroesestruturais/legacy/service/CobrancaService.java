@@ -3,9 +3,9 @@ package br.unicamp.padroesestruturais.legacy.service;
 import br.unicamp.padroesestruturais.legacy.domain.FormaPagamento;
 import br.unicamp.padroesestruturais.legacy.domain.Pedido;
 import br.unicamp.padroesestruturais.legacy.domain.ResultadoCobranca;
-import br.unicamp.padroesestruturais.legacy.externo.GatewayIndisponivelException;
-import br.unicamp.padroesestruturais.legacy.externo.PaySecureGateway;
-import br.unicamp.padroesestruturais.legacy.externo.TransacaoExterna;
+import br.unicamp.padroesestruturais.legacy.externo.paysecure.GatewayIndisponivelException;
+import br.unicamp.padroesestruturais.legacy.externo.paysecure.PaySecureGateway;
+import br.unicamp.padroesestruturais.legacy.externo.paysecure.TransacaoExterna;
 import br.unicamp.padroesestruturais.legacy.gateway.GatewayPagamentoInterno;
 
 import java.util.ArrayList;
@@ -68,6 +68,7 @@ public class CobrancaService {
             double valorFinal = calcularValorFinal(pedido.getValorBase(), aplicarDescontoFidelidade,
                     aplicarJurosParcelamento, aplicarTaxaInternacional, aplicarSeguro);
 
+            // para refatorar
             if (forma == FormaPagamento.BOLETO || forma == FormaPagamento.PIX) {
                 GatewayPagamentoInterno gateway = new GatewayPagamentoInterno();
                 resultados.add(gateway.cobrar(pedido.getId(), pedido.getCliente(), valorFinal, forma));

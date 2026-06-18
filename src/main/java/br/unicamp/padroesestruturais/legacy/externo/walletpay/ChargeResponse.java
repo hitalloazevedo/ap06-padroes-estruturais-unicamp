@@ -1,4 +1,4 @@
-package br.unicamp.padroesestruturais.legacy.externo;
+package br.unicamp.padroesestruturais.legacy.externo.walletpay;
 
 /**
  * Resposta de cobranca do SDK WalletPay.

@@ -1,4 +1,4 @@
-package br.unicamp.padroesestruturais.legacy.externo;
+package br.unicamp.padroesestruturais.legacy.externo.walletpay;
 
 /**
  * SDK da carteira digital WalletPay.

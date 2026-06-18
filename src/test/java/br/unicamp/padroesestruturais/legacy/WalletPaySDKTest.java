@@ -1,9 +1,10 @@
 package br.unicamp.padroesestruturais.legacy;
 
-import br.unicamp.padroesestruturais.legacy.externo.ChargeRequest;
-import br.unicamp.padroesestruturais.legacy.externo.ChargeResponse;
-import br.unicamp.padroesestruturais.legacy.externo.ChargeStatus;
-import br.unicamp.padroesestruturais.legacy.externo.WalletPaySDK;
+import br.unicamp.padroesestruturais.legacy.externo.walletpay.ChargeRequest;
+import br.unicamp.padroesestruturais.legacy.externo.walletpay.ChargeResponse;
+import br.unicamp.padroesestruturais.legacy.externo.walletpay.ChargeStatus;
+import br.unicamp.padroesestruturais.legacy.externo.walletpay.WalletPaySDK;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
