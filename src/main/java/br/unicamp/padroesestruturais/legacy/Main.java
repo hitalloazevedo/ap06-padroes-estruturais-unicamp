@@ -4,10 +4,12 @@ import br.unicamp.padroesestruturais.legacy.domain.FormaPagamento;
 import br.unicamp.padroesestruturais.legacy.domain.Pedido;
 import br.unicamp.padroesestruturais.legacy.domain.ResultadoCobranca;
 import br.unicamp.padroesestruturais.legacy.externo.paysecure.PaySecureGateway;
+import br.unicamp.padroesestruturais.legacy.externo.walletpay.WalletPaySDK;
 import br.unicamp.padroesestruturais.legacy.gateway.BoletoAdapter;
 import br.unicamp.padroesestruturais.legacy.gateway.GatewayPagamentoInterno;
 import br.unicamp.padroesestruturais.legacy.gateway.PaySecureAdapter;
 import br.unicamp.padroesestruturais.legacy.gateway.PixAdapter;
+import br.unicamp.padroesestruturais.legacy.gateway.WalletPayAdapter;
 import br.unicamp.padroesestruturais.legacy.gateway.PaymentGateway;
 import br.unicamp.padroesestruturais.legacy.service.CobrancaService;
 
@@ -135,12 +137,14 @@ public class Main {
         System.out.println("  1. Boleto");
         System.out.println("  2. Pix");
         System.out.println("  3. Cartao de Credito");
+        System.out.println("  4. WalletPay");
         System.out.print("Escolha: ");
 
         return switch (lerInteiro(scanner)) {
             case 1 -> FormaPagamento.BOLETO;
             case 2 -> FormaPagamento.PIX;
             case 3 -> FormaPagamento.CARTAO_CREDITO;
+            case 4 -> FormaPagamento.WALLET_PAY;
             default -> {
                 System.out.println("Forma de pagamento invalida.");
                 yield null;
@@ -175,6 +179,7 @@ public class Main {
         gateways.put(FormaPagamento.PIX, new PixAdapter(new GatewayPagamentoInterno()));
         gateways.put(FormaPagamento.BOLETO, new BoletoAdapter(new GatewayPagamentoInterno()));
         gateways.put(FormaPagamento.CARTAO_CREDITO, new PaySecureAdapter(new PaySecureGateway()));
+        gateways.put(FormaPagamento.WALLET_PAY, new WalletPayAdapter(new WalletPaySDK()));
         return gateways;
     }
 }
