@@ -10,6 +10,7 @@ public class GatewayPagamentoInterno {
 
     public ResultadoCobranca cobrar(String pedidoId, String cliente, double valor, FormaPagamento forma) {
         String referencia = "INT-" + pedidoId + "-" + forma.name();
-        return new ResultadoCobranca(pedidoId, valor, "APROVADA", referencia, forma);
+        PaymentGatewayStatus status = PaymentGatewayStatus.APROVADA; // Simula aprovação automática
+        return new ResultadoCobranca(pedidoId, valor, status.toString(), referencia, forma);
     }
 }
