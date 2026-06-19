@@ -56,44 +56,19 @@ public class CobrancaService {
         }
     }
 
-    public List<ResultadoCobranca> cobrarEmLote(List<Pedido> pedidos, FormaPagamento forma,
-                                                  boolean aplicarDescontoFidelidade,
-                                                  boolean aplicarJurosParcelamento,
-                                                  boolean aplicarTaxaInternacional,
-                                                  boolean aplicarSeguro) {
+    public List<ResultadoCobranca> cobrarEmLote(
+        List<Pedido> pedidos, FormaPagamento forma,
+        boolean aplicarDescontoFidelidade,
+        boolean aplicarJurosParcelamento,
+        boolean aplicarTaxaInternacional,
+        boolean aplicarSeguro
+    ) {
 
         List<ResultadoCobranca> resultados = new ArrayList<>();
 
         for (Pedido pedido : pedidos) {
-            double valorFinal = calcularValorFinal(pedido.getValorBase(), aplicarDescontoFidelidade,
-                    aplicarJurosParcelamento, aplicarTaxaInternacional, aplicarSeguro);
-
-            // para refatorar
-            if (forma == FormaPagamento.BOLETO || forma == FormaPagamento.PIX) {
-                GatewayPagamentoInterno gateway = new GatewayPagamentoInterno();
-                resultados.add(gateway.cobrar(pedido.getId(), pedido.getCliente(), valorFinal, forma));
-
-            } else if (forma == FormaPagamento.CARTAO_CREDITO) {
-                PaySecureGateway gateway = new PaySecureGateway();
-
-                Map<String, Object> dadosTransacao = new HashMap<>();
-                dadosTransacao.put("orderId", pedido.getId());
-                dadosTransacao.put("customerName", pedido.getCliente());
-                dadosTransacao.put("amount", valorFinal);
-                dadosTransacao.put("currency", "BRL");
-
-                try {
-                    TransacaoExterna transacao = gateway.processarTransacao(dadosTransacao);
-                    String status = transacao.getCodigoStatus() == 200 ? "APROVADA" : "RECUSADA";
-                    resultados.add(new ResultadoCobranca(pedido.getId(), valorFinal, status, transacao.getReferenciaExterna(), forma));
-
-                } catch (GatewayIndisponivelException e) {
-                    resultados.add(new ResultadoCobranca(pedido.getId(), valorFinal, "RECUSADA", null, forma));
-                }
-
-            } else {
-                throw new IllegalArgumentException("Forma de pagamento nao suportada: " + forma);
-            }
+            ResultadoCobranca resultado = this.cobrar(pedido, forma, aplicarDescontoFidelidade, aplicarJurosParcelamento, aplicarTaxaInternacional, aplicarSeguro);
+            resultados.add(resultado);
         }
 
         return resultados;
