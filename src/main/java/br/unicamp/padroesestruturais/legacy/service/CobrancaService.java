@@ -3,15 +3,11 @@ package br.unicamp.padroesestruturais.legacy.service;
 import br.unicamp.padroesestruturais.legacy.domain.FormaPagamento;
 import br.unicamp.padroesestruturais.legacy.domain.Pedido;
 import br.unicamp.padroesestruturais.legacy.domain.ResultadoCobranca;
-import br.unicamp.padroesestruturais.legacy.externo.paysecure.GatewayIndisponivelException;
-import br.unicamp.padroesestruturais.legacy.externo.paysecure.PaySecureGateway;
-import br.unicamp.padroesestruturais.legacy.externo.paysecure.TransacaoExterna;
-import br.unicamp.padroesestruturais.legacy.gateway.GatewayPagamentoInterno;
+import br.unicamp.padroesestruturais.legacy.gateway.PaymentGateway;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class CobrancaService {
 
@@ -19,41 +15,36 @@ public class CobrancaService {
     private static final double TAXA_JUROS_PARCELAMENTO = 0.0299;
     private static final double TAXA_OPERACAO_INTERNACIONAL = 0.05;
     private static final double VALOR_SEGURO = 4.90;
+    private final HashMap<FormaPagamento, PaymentGateway> gateways;
 
-    public ResultadoCobranca cobrar(Pedido pedido, FormaPagamento forma,
-                                     boolean aplicarDescontoFidelidade,
-                                     boolean aplicarJurosParcelamento,
-                                     boolean aplicarTaxaInternacional,
-                                     boolean aplicarSeguro) {
+    public CobrancaService(HashMap<FormaPagamento, PaymentGateway> gateways) {
+        this.gateways = gateways;
+    }
 
-        double valorFinal = calcularValorFinal(pedido.getValorBase(), aplicarDescontoFidelidade,
-                aplicarJurosParcelamento, aplicarTaxaInternacional, aplicarSeguro);
+    public ResultadoCobranca cobrar(
+        Pedido pedido, 
+        FormaPagamento forma,
+        boolean aplicarDescontoFidelidade,
+        boolean aplicarJurosParcelamento,
+        boolean aplicarTaxaInternacional,
+        boolean aplicarSeguro
+    ) {
 
-        if (forma == FormaPagamento.BOLETO || forma == FormaPagamento.PIX) {
-            GatewayPagamentoInterno gateway = new GatewayPagamentoInterno();
-            return gateway.cobrar(pedido.getId(), pedido.getCliente(), valorFinal, forma);
+        PaymentGateway gateway = this.gateways.get(forma);
 
-        } else if (forma == FormaPagamento.CARTAO_CREDITO) {
-            PaySecureGateway gateway = new PaySecureGateway();
-
-            Map<String, Object> dadosTransacao = new HashMap<>();
-            dadosTransacao.put("orderId", pedido.getId());
-            dadosTransacao.put("customerName", pedido.getCliente());
-            dadosTransacao.put("amount", valorFinal);
-            dadosTransacao.put("currency", "BRL");
-
-            try {
-                TransacaoExterna transacao = gateway.processarTransacao(dadosTransacao);
-                String status = transacao.getCodigoStatus() == 200 ? "APROVADA" : "RECUSADA";
-                return new ResultadoCobranca(pedido.getId(), valorFinal, status, transacao.getReferenciaExterna(), forma);
-
-            } catch (GatewayIndisponivelException e) {
-                return new ResultadoCobranca(pedido.getId(), valorFinal, "RECUSADA", null, forma);
-            }
-
-        } else {
-            throw new IllegalArgumentException("Forma de pagamento nao suportada: " + forma);
+        if (gateway == null) {
+            throw new IllegalArgumentException("Forma de pagamento não suportada: " + forma);
         }
+
+        double valorFinal = calcularValorFinal(
+            pedido.getValorBase(), 
+            aplicarDescontoFidelidade,
+            aplicarJurosParcelamento, 
+            aplicarTaxaInternacional, 
+            aplicarSeguro
+        );
+        
+        return gateway.processPayment(pedido.getId(), pedido.getCliente(), valorFinal);
     }
 
     public List<ResultadoCobranca> cobrarEmLote(
@@ -67,8 +58,16 @@ public class CobrancaService {
         List<ResultadoCobranca> resultados = new ArrayList<>();
 
         for (Pedido pedido : pedidos) {
-            ResultadoCobranca resultado = this.cobrar(pedido, forma, aplicarDescontoFidelidade, aplicarJurosParcelamento, aplicarTaxaInternacional, aplicarSeguro);
-            resultados.add(resultado);
+            resultados.add(
+                this.cobrar(
+                    pedido, 
+                    forma, 
+                    aplicarDescontoFidelidade, 
+                    aplicarJurosParcelamento, 
+                    aplicarTaxaInternacional, 
+                    aplicarSeguro
+                )
+            );
         }
 
         return resultados;

@@ -3,16 +3,24 @@ package br.unicamp.padroesestruturais.legacy;
 import br.unicamp.padroesestruturais.legacy.domain.FormaPagamento;
 import br.unicamp.padroesestruturais.legacy.domain.Pedido;
 import br.unicamp.padroesestruturais.legacy.domain.ResultadoCobranca;
+import br.unicamp.padroesestruturais.legacy.externo.paysecure.PaySecureGateway;
+import br.unicamp.padroesestruturais.legacy.gateway.BoletoAdapter;
+import br.unicamp.padroesestruturais.legacy.gateway.GatewayPagamentoInterno;
+import br.unicamp.padroesestruturais.legacy.gateway.PaySecureAdapter;
+import br.unicamp.padroesestruturais.legacy.gateway.PixAdapter;
+import br.unicamp.padroesestruturais.legacy.gateway.PaymentGateway;
 import br.unicamp.padroesestruturais.legacy.service.CobrancaService;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
 
 public class Main {
 
     public static void main(String[] args) {
-        CobrancaService cobrancaService = new CobrancaService();
+        HashMap<FormaPagamento, PaymentGateway> gateways = initGateways();
+        CobrancaService cobrancaService = new CobrancaService(gateways);
         List<Pedido> pedidos = criarPedidosExemplo();
 
         Scanner scanner = new Scanner(System.in);
@@ -160,5 +168,13 @@ public class Main {
         pedidos.add(new Pedido("PED-002", "Maria Santos", "Cadeira de Escritorio Ergonomica", 890.00));
         pedidos.add(new Pedido("PED-003", "Construtora ABC Ltda", "Servidor Dell PowerEdge R740", 18500.00));
         return pedidos;
+    }
+
+    private static HashMap<FormaPagamento, PaymentGateway> initGateways() {
+        HashMap<FormaPagamento, PaymentGateway> gateways = new HashMap<>();
+        gateways.put(FormaPagamento.PIX, new PixAdapter(new GatewayPagamentoInterno()));
+        gateways.put(FormaPagamento.BOLETO, new BoletoAdapter(new GatewayPagamentoInterno()));
+        gateways.put(FormaPagamento.CARTAO_CREDITO, new PaySecureAdapter(new PaySecureGateway()));
+        return gateways;
     }
 }

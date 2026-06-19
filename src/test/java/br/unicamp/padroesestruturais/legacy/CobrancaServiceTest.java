@@ -3,11 +3,18 @@ package br.unicamp.padroesestruturais.legacy;
 import br.unicamp.padroesestruturais.legacy.domain.FormaPagamento;
 import br.unicamp.padroesestruturais.legacy.domain.Pedido;
 import br.unicamp.padroesestruturais.legacy.domain.ResultadoCobranca;
+import br.unicamp.padroesestruturais.legacy.externo.paysecure.PaySecureGateway;
+import br.unicamp.padroesestruturais.legacy.gateway.BoletoAdapter;
+import br.unicamp.padroesestruturais.legacy.gateway.GatewayPagamentoInterno;
+import br.unicamp.padroesestruturais.legacy.gateway.PaySecureAdapter;
+import br.unicamp.padroesestruturais.legacy.gateway.PaymentGateway;
+import br.unicamp.padroesestruturais.legacy.gateway.PixAdapter;
 import br.unicamp.padroesestruturais.legacy.service.CobrancaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,7 +26,12 @@ class CobrancaServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new CobrancaService();
+        HashMap<FormaPagamento, PaymentGateway> gateways = new HashMap<>();
+        gateways.put(FormaPagamento.PIX, new PixAdapter(new GatewayPagamentoInterno()));
+        gateways.put(FormaPagamento.BOLETO, new BoletoAdapter(new GatewayPagamentoInterno()));
+        gateways.put(FormaPagamento.CARTAO_CREDITO, new PaySecureAdapter(new PaySecureGateway()));
+        service = new CobrancaService(gateways);
+        
         pedido = new Pedido("PED-001", "Joao Silva", "Notebook Dell XPS 15", 1000.0);
     }
 
