@@ -87,6 +87,7 @@ public class Main {
         boolean jurosParcelamento = perguntarSimNao(scanner, "Aplicar juros de parcelamento (2,99%)?");
         boolean taxaInternacional = perguntarSimNao(scanner, "Aplicar taxa de operacao internacional (5%)?");
         boolean seguro = perguntarSimNao(scanner, "Aplicar seguro de transacao (R$ 4,90)?");
+        
 
         List<ResultadoCobranca> resultados = service.cobrarEmLote(pedidos, forma,
                 descontoFidelidade, jurosParcelamento, taxaInternacional, seguro);

@@ -1,6 +1,6 @@
 package br.unicamp.padroesestruturais.legacy.domain;
 
-public class ResultadoCobranca {
+public class ResultadoCobranca implements Cobranca {
 
     private String pedidoId;
     private double valorCobrado;
