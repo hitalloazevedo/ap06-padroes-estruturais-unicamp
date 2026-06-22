@@ -1,8 +1,9 @@
 package br.unicamp.padroesestruturais.legacy;
 
-import br.unicamp.padroesestruturais.legacy.externo.GatewayIndisponivelException;
-import br.unicamp.padroesestruturais.legacy.externo.PaySecureGateway;
-import br.unicamp.padroesestruturais.legacy.externo.TransacaoExterna;
+import br.unicamp.padroesestruturais.legacy.externo.paysecure.GatewayIndisponivelException;
+import br.unicamp.padroesestruturais.legacy.externo.paysecure.PaySecureGateway;
+import br.unicamp.padroesestruturais.legacy.externo.paysecure.TransacaoExterna;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;

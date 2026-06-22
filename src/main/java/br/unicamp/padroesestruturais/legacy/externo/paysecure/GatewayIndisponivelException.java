@@ -1,4 +1,4 @@
-package br.unicamp.padroesestruturais.legacy.externo;
+package br.unicamp.padroesestruturais.legacy.externo.paysecure;
 
 /**
  * Excecao lancada pelo SDK PaySecure quando a transacao nao pode ser processada.

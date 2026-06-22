@@ -3,11 +3,20 @@ package br.unicamp.padroesestruturais.legacy;
 import br.unicamp.padroesestruturais.legacy.domain.FormaPagamento;
 import br.unicamp.padroesestruturais.legacy.domain.Pedido;
 import br.unicamp.padroesestruturais.legacy.domain.ResultadoCobranca;
+import br.unicamp.padroesestruturais.legacy.externo.paysecure.PaySecureGateway;
+import br.unicamp.padroesestruturais.legacy.externo.walletpay.WalletPaySDK;
+import br.unicamp.padroesestruturais.legacy.gateway.BoletoAdapter;
+import br.unicamp.padroesestruturais.legacy.gateway.GatewayPagamentoInterno;
+import br.unicamp.padroesestruturais.legacy.gateway.PaySecureAdapter;
+import br.unicamp.padroesestruturais.legacy.gateway.PaymentGateway;
+import br.unicamp.padroesestruturais.legacy.gateway.PixAdapter;
+import br.unicamp.padroesestruturais.legacy.gateway.WalletPayAdapter;
 import br.unicamp.padroesestruturais.legacy.service.CobrancaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,7 +28,13 @@ class CobrancaServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new CobrancaService();
+        HashMap<FormaPagamento, PaymentGateway> gateways = new HashMap<>();
+        gateways.put(FormaPagamento.PIX, new PixAdapter(new GatewayPagamentoInterno()));
+        gateways.put(FormaPagamento.BOLETO, new BoletoAdapter(new GatewayPagamentoInterno()));
+        gateways.put(FormaPagamento.CARTAO_CREDITO, new PaySecureAdapter(new PaySecureGateway()));
+        gateways.put(FormaPagamento.WALLET_PAY, new WalletPayAdapter(new WalletPaySDK()));
+        service = new CobrancaService(gateways);
+
         pedido = new Pedido("PED-001", "Joao Silva", "Notebook Dell XPS 15", 1000.0);
     }
 
@@ -133,5 +148,54 @@ class CobrancaServiceTest {
 
         assertEquals(950.0, resultados.get(0).getValorCobrado(), 0.001);
         assertEquals(1900.0, resultados.get(1).getValorCobrado(), 0.001);
+    }
+
+    // ── WalletPay via CobrancaService ─────────────────────────────────────────
+
+    @Test
+    void deveCobrarViaWalletPayComSucesso() {
+        ResultadoCobranca resultado = service.cobrar(pedido, FormaPagamento.WALLET_PAY, false, false, false, false);
+
+        assertEquals("APROVADA", resultado.getStatus());
+        assertEquals(FormaPagamento.WALLET_PAY, resultado.getFormaPagamento());
+        assertEquals("PED-001", resultado.getPedidoId());
+        assertEquals(1000.0, resultado.getValorCobrado(), 0.001);
+    }
+
+    @Test
+    void deveRetornarReferenciaWalletPayComPrefixoCorreto() {
+        ResultadoCobranca resultado = service.cobrar(pedido, FormaPagamento.WALLET_PAY, false, false, false, false);
+
+        assertNotNull(resultado.getReferencia());
+        assertTrue(resultado.getReferencia().startsWith("WPAY-"));
+    }
+
+    @Test
+    void deveRecusarWalletPayParaValorInteiroAcimaDoLimite() {
+        Pedido pedidoCaro = new Pedido("PED-ALTO", "Empresa X", "Servidor Enterprise", 10001.0);
+
+        ResultadoCobranca resultado = service.cobrar(pedidoCaro, FormaPagamento.WALLET_PAY, false, false, false, false);
+
+        assertEquals("RECUSADA", resultado.getStatus());
+        assertEquals(FormaPagamento.WALLET_PAY, resultado.getFormaPagamento());
+    }
+
+    @Test
+    void deveRecusarWalletPayParaValorDecimalAcimaDoLimite() {
+        Pedido pedidoLimite = new Pedido("PED-LIMITE", "Empresa Y", "Equipamento", 10000.50);
+
+        ResultadoCobranca resultado = service.cobrar(pedidoLimite, FormaPagamento.WALLET_PAY, false, false, false, false);
+
+        assertEquals("RECUSADA", resultado.getStatus());
+    }
+
+    @Test
+    void deveMapeiarFalhaDoWalletPayComoFalhou() {
+        Pedido pedidoZero = new Pedido("PED-ZERO", "Cliente Z", "Item", 0.0);
+
+        ResultadoCobranca resultado = service.cobrar(pedidoZero, FormaPagamento.WALLET_PAY, false, false, false, false);
+
+        assertEquals("FALHOU", resultado.getStatus());
+        assertNull(resultado.getReferencia());
     }
 }

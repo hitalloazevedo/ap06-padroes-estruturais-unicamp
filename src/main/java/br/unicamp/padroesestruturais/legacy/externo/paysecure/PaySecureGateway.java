@@ -1,4 +1,4 @@
-package br.unicamp.padroesestruturais.legacy.externo;
+package br.unicamp.padroesestruturais.legacy.externo.paysecure;
 
 import java.util.Map;
 import java.util.UUID;
