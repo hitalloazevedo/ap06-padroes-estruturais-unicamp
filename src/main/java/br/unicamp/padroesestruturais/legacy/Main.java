@@ -1,5 +1,9 @@
 package br.unicamp.padroesestruturais.legacy;
 
+import br.unicamp.padroesestruturais.decorators.CobrancaComJurosParcela;
+import br.unicamp.padroesestruturais.decorators.CobrancaComTaxaInternacional;
+import br.unicamp.padroesestruturais.decorators.CobrancaDecorator;
+import br.unicamp.padroesestruturais.legacy.domain.Cobranca;
 import br.unicamp.padroesestruturais.legacy.domain.FormaPagamento;
 import br.unicamp.padroesestruturais.legacy.domain.Pedido;
 import br.unicamp.padroesestruturais.legacy.domain.ResultadoCobranca;
@@ -66,11 +70,16 @@ public class Main {
 
         FormaPagamento forma = selecionarFormaPagamento(scanner);
         if (forma == null) return;
+        Cobranca cobranca;
 
         boolean descontoFidelidade = perguntarSimNao(scanner, "Aplicar desconto de fidelidade (5%)?");
+        if (descontoFidelidade) cobranca = new CobrancaComDescontoFidelidade(cobranca); 
         boolean jurosParcelamento = perguntarSimNao(scanner, "Aplicar juros de parcelamento (2,99%)?");
+        if (jurosParcelamento) cobranca = new CobrancaComJurosParcela(cobranca);
         boolean taxaInternacional = perguntarSimNao(scanner, "Aplicar taxa de operacao internacional (5%)?");
+        if (taxaInternacional) cobranca = new CobrancaComTaxaInternacional(cobranca);
         boolean seguro = perguntarSimNao(scanner, "Aplicar seguro de transacao (R$ 4,90)?");
+        if (seguro) cobranca = new CobrancaComJurosParcela(cobranca);
 
         ResultadoCobranca resultado = service.cobrar(pedido, forma,
                 descontoFidelidade, jurosParcelamento, taxaInternacional, seguro);
@@ -82,12 +91,16 @@ public class Main {
     private static void fluxoCobrancaEmLote(Scanner scanner, List<Pedido> pedidos, CobrancaService service) {
         FormaPagamento forma = selecionarFormaPagamento(scanner);
         if (forma == null) return;
+        Cobranca cobranca;
 
         boolean descontoFidelidade = perguntarSimNao(scanner, "Aplicar desconto de fidelidade (5%)?");
+        if (descontoFidelidade) cobranca = new CobrancaComDescontoFidelidade(cobranca); 
         boolean jurosParcelamento = perguntarSimNao(scanner, "Aplicar juros de parcelamento (2,99%)?");
+        if (jurosParcelamento) cobranca = new CobrancaComJurosParcela(cobranca);
         boolean taxaInternacional = perguntarSimNao(scanner, "Aplicar taxa de operacao internacional (5%)?");
+        if (taxaInternacional) cobranca = new CobrancaComTaxaInternacional(cobranca);
         boolean seguro = perguntarSimNao(scanner, "Aplicar seguro de transacao (R$ 4,90)?");
-        
+        if (seguro) cobranca = new CobrancaComJurosParcela(cobranca);
 
         List<ResultadoCobranca> resultados = service.cobrarEmLote(pedidos, forma,
                 descontoFidelidade, jurosParcelamento, taxaInternacional, seguro);

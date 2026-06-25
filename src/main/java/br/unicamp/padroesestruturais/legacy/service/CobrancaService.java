@@ -1,5 +1,6 @@
 package br.unicamp.padroesestruturais.legacy.service;
 
+import br.unicamp.padroesestruturais.decorators.CobrancaDecorator;
 import br.unicamp.padroesestruturais.legacy.domain.FormaPagamento;
 import br.unicamp.padroesestruturais.legacy.domain.Pedido;
 import br.unicamp.padroesestruturais.legacy.domain.ResultadoCobranca;
@@ -73,30 +74,26 @@ public class CobrancaService {
         return resultados;
     }
 
-    public double calcularValorFinal(double valorBase,
-                                      boolean aplicarDescontoFidelidade,
-                                      boolean aplicarJurosParcelamento,
-                                      boolean aplicarTaxaInternacional,
-                                      boolean aplicarSeguro) {
+    public double calcularValorFinal(CobrancaDecorator cobracaDecorator) {
 
-        double valor = valorBase;
+        // double valor = valorBase;
 
-        if (aplicarDescontoFidelidade) {
-            valor = valor - (valor * TAXA_DESCONTO_FIDELIDADE);
-        }
+        // if (aplicarDescontoFidelidade) {
+        //     valor = valor - (valor * TAXA_DESCONTO_FIDELIDADE);
+        // }
 
-        if (aplicarJurosParcelamento) {
-            valor = valor + (valor * TAXA_JUROS_PARCELAMENTO);
-        }
+        // if (aplicarJurosParcelamento) {
+        //     valor = valor + (valor * TAXA_JUROS_PARCELAMENTO);
+        // }
 
-        if (aplicarTaxaInternacional) {
-            valor = valor + (valor * TAXA_OPERACAO_INTERNACIONAL);
-        }
+        // if (aplicarTaxaInternacional) {
+        //     valor = valor + (valor * TAXA_OPERACAO_INTERNACIONAL);
+        // }
 
-        if (aplicarSeguro) {
-            valor = valor + VALOR_SEGURO;
-        }
+        // if (aplicarSeguro) {
+        //     valor = valor + VALOR_SEGURO;
+        // }
 
-        return valor;
+        return cobracaDecorator.getValorCobrado();
     }
 }
