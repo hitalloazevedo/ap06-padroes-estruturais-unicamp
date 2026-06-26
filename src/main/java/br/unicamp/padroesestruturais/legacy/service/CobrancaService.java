@@ -1,9 +1,9 @@
 package br.unicamp.padroesestruturais.legacy.service;
 
-import br.unicamp.padroesestruturais.decorators.CobrancaDecorator;
 import br.unicamp.padroesestruturais.legacy.domain.FormaPagamento;
 import br.unicamp.padroesestruturais.legacy.domain.Pedido;
 import br.unicamp.padroesestruturais.legacy.domain.ResultadoCobranca;
+import br.unicamp.padroesestruturais.legacy.domain.Taxa;
 import br.unicamp.padroesestruturais.legacy.gateway.PaymentGateway;
 
 import java.util.ArrayList;
@@ -12,10 +12,6 @@ import java.util.List;
 
 public class CobrancaService {
 
-    private static final double TAXA_DESCONTO_FIDELIDADE = 0.05;
-    private static final double TAXA_JUROS_PARCELAMENTO = 0.0299;
-    private static final double TAXA_OPERACAO_INTERNACIONAL = 0.05;
-    private static final double VALOR_SEGURO = 4.90;
     private final HashMap<FormaPagamento, PaymentGateway> gateways;
 
     public CobrancaService(HashMap<FormaPagamento, PaymentGateway> gateways) {
@@ -25,10 +21,7 @@ public class CobrancaService {
     public ResultadoCobranca cobrar(
         Pedido pedido, 
         FormaPagamento forma,
-        boolean aplicarDescontoFidelidade,
-        boolean aplicarJurosParcelamento,
-        boolean aplicarTaxaInternacional,
-        boolean aplicarSeguro
+        Taxa taxa
     ) {
 
         PaymentGateway gateway = this.gateways.get(forma);
@@ -36,24 +29,14 @@ public class CobrancaService {
         if (gateway == null) {
             throw new IllegalArgumentException("Forma de pagamento não suportada: " + forma);
         }
-
-        double valorFinal = calcularValorFinal(
-            pedido.getValorBase(), 
-            aplicarDescontoFidelidade,
-            aplicarJurosParcelamento, 
-            aplicarTaxaInternacional, 
-            aplicarSeguro
-        );
         
+        double valorFinal = this.calcularValorFinal(pedido.getValorBase(), taxa);
+
         return gateway.processPayment(pedido.getId(), pedido.getCliente(), valorFinal);
     }
 
     public List<ResultadoCobranca> cobrarEmLote(
-        List<Pedido> pedidos, FormaPagamento forma,
-        boolean aplicarDescontoFidelidade,
-        boolean aplicarJurosParcelamento,
-        boolean aplicarTaxaInternacional,
-        boolean aplicarSeguro
+        List<Pedido> pedidos, FormaPagamento forma, Taxa taxa
     ) {
 
         List<ResultadoCobranca> resultados = new ArrayList<>();
@@ -62,11 +45,8 @@ public class CobrancaService {
             resultados.add(
                 this.cobrar(
                     pedido, 
-                    forma, 
-                    aplicarDescontoFidelidade, 
-                    aplicarJurosParcelamento, 
-                    aplicarTaxaInternacional, 
-                    aplicarSeguro
+                    forma,
+                    taxa
                 )
             );
         }
@@ -74,26 +54,7 @@ public class CobrancaService {
         return resultados;
     }
 
-    public double calcularValorFinal(CobrancaDecorator cobracaDecorator) {
-
-        // double valor = valorBase;
-
-        // if (aplicarDescontoFidelidade) {
-        //     valor = valor - (valor * TAXA_DESCONTO_FIDELIDADE);
-        // }
-
-        // if (aplicarJurosParcelamento) {
-        //     valor = valor + (valor * TAXA_JUROS_PARCELAMENTO);
-        // }
-
-        // if (aplicarTaxaInternacional) {
-        //     valor = valor + (valor * TAXA_OPERACAO_INTERNACIONAL);
-        // }
-
-        // if (aplicarSeguro) {
-        //     valor = valor + VALOR_SEGURO;
-        // }
-
-        return cobracaDecorator.getValorCobrado();
+    public double calcularValorFinal(double valorBase, Taxa taxa) {
+        return taxa.calcular(valorBase);
     }
 }

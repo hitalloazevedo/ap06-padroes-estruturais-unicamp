@@ -1,5 +1,10 @@
 package br.unicamp.padroesestruturais.legacy;
 
+import br.unicamp.padroesestruturais.decorators.TaxaBase;
+import br.unicamp.padroesestruturais.decorators.TaxaDescontoFidelidade;
+import br.unicamp.padroesestruturais.decorators.TaxaInternacional;
+import br.unicamp.padroesestruturais.decorators.TaxaJurosParcela;
+import br.unicamp.padroesestruturais.decorators.TaxaSeguro;
 import br.unicamp.padroesestruturais.legacy.domain.FormaPagamento;
 import br.unicamp.padroesestruturais.legacy.domain.Pedido;
 import br.unicamp.padroesestruturais.legacy.domain.ResultadoCobranca;
@@ -40,7 +45,7 @@ class CobrancaServiceTest {
 
     @Test
     void deveCobrarViaBoletoSemAjustes() {
-        ResultadoCobranca resultado = service.cobrar(pedido, FormaPagamento.BOLETO, false, false, false, false);
+        ResultadoCobranca resultado = service.cobrar(pedido, FormaPagamento.BOLETO, new TaxaBase());
 
         assertEquals("APROVADA", resultado.getStatus());
         assertEquals(1000.0, resultado.getValorCobrado(), 0.001);
@@ -49,7 +54,7 @@ class CobrancaServiceTest {
 
     @Test
     void deveCobrarViaPixSemAjustes() {
-        ResultadoCobranca resultado = service.cobrar(pedido, FormaPagamento.PIX, false, false, false, false);
+        ResultadoCobranca resultado = service.cobrar(pedido, FormaPagamento.PIX, new TaxaBase());
 
         assertEquals("APROVADA", resultado.getStatus());
         assertEquals(FormaPagamento.PIX, resultado.getFormaPagamento());
@@ -57,7 +62,7 @@ class CobrancaServiceTest {
 
     @Test
     void deveCobrarViaCartaoCreditoSemAjustes() {
-        ResultadoCobranca resultado = service.cobrar(pedido, FormaPagamento.CARTAO_CREDITO, false, false, false, false);
+        ResultadoCobranca resultado = service.cobrar(pedido, FormaPagamento.CARTAO_CREDITO, new TaxaBase());
 
         assertEquals("APROVADA", resultado.getStatus());
         assertNotNull(resultado.getReferencia());
@@ -68,7 +73,7 @@ class CobrancaServiceTest {
     void deveRecusarCartaoCreditoParaValorAcimaDoLimite() {
         Pedido pedidoCaro = new Pedido("PED-003", "Construtora ABC Ltda", "Servidor", 15000.0);
 
-        ResultadoCobranca resultado = service.cobrar(pedidoCaro, FormaPagamento.CARTAO_CREDITO, false, false, false, false);
+        ResultadoCobranca resultado = service.cobrar(pedidoCaro, FormaPagamento.CARTAO_CREDITO, new TaxaBase());
 
         assertEquals("RECUSADA", resultado.getStatus());
     }
@@ -76,42 +81,42 @@ class CobrancaServiceTest {
     @Test
     void deveLancarExcecaoParaFormaDePagamentoNaoSuportada() {
         assertThrows(IllegalArgumentException.class,
-                () -> service.cobrar(pedido, null, false, false, false, false));
+                () -> service.cobrar(pedido, null, new TaxaBase()));
     }
 
     @Test
     void naoAplicarNenhumAjusteMantemValorBase() {
-        double valor = service.calcularValorFinal(1000.0, false, false, false, false);
+        double valor = service.calcularValorFinal(1000.0, new TaxaBase());
         assertEquals(1000.0, valor, 0.001);
     }
 
     @Test
     void deveAplicarDescontoDeFidelidade() {
-        double valor = service.calcularValorFinal(1000.0, true, false, false, false);
+        double valor = service.calcularValorFinal(1000.0, new TaxaDescontoFidelidade(new TaxaBase()));
         assertEquals(950.0, valor, 0.001);
     }
 
     @Test
     void deveAplicarJurosDeParcelamento() {
-        double valor = service.calcularValorFinal(1000.0, false, true, false, false);
+        double valor = service.calcularValorFinal(1000.0, new TaxaJurosParcela(new TaxaBase()));
         assertEquals(1029.9, valor, 0.001);
     }
 
     @Test
     void deveAplicarTaxaInternacional() {
-        double valor = service.calcularValorFinal(1000.0, false, false, true, false);
+        double valor = service.calcularValorFinal(1000.0, new TaxaInternacional(new TaxaBase()));
         assertEquals(1050.0, valor, 0.001);
     }
 
     @Test
     void deveAplicarSeguro() {
-        double valor = service.calcularValorFinal(1000.0, false, false, false, true);
+        double valor = service.calcularValorFinal(1000.0, new TaxaSeguro(new TaxaBase()));
         assertEquals(1004.90, valor, 0.001);
     }
 
     @Test
     void deveAplicarTodosOsAjustesNaOrdemDefinida() {
-        double valor = service.calcularValorFinal(1000.0, true, true, true, true);
+        double valor = service.calcularValorFinal(1000.0, new TaxaDescontoFidelidade(new TaxaJurosParcela(new TaxaInternacional(new TaxaSeguro(new TaxaBase())))));
 
         double esperado = 1000.0;
         esperado = esperado - (esperado * 0.05);
@@ -129,7 +134,7 @@ class CobrancaServiceTest {
                 new Pedido("PED-002", "Maria Santos", "Cadeira", 500.0)
         );
 
-        List<ResultadoCobranca> resultados = service.cobrarEmLote(pedidos, FormaPagamento.PIX, false, false, false, false);
+        List<ResultadoCobranca> resultados = service.cobrarEmLote(pedidos, FormaPagamento.PIX, new TaxaBase());
 
         assertEquals(2, resultados.size());
         for (ResultadoCobranca resultado : resultados) {
@@ -144,7 +149,7 @@ class CobrancaServiceTest {
                 new Pedido("PED-002", "Maria Santos", "Cadeira", 2000.0)
         );
 
-        List<ResultadoCobranca> resultados = service.cobrarEmLote(pedidos, FormaPagamento.BOLETO, true, false, false, false);
+        List<ResultadoCobranca> resultados = service.cobrarEmLote(pedidos, FormaPagamento.BOLETO, new TaxaBase());
 
         assertEquals(950.0, resultados.get(0).getValorCobrado(), 0.001);
         assertEquals(1900.0, resultados.get(1).getValorCobrado(), 0.001);
@@ -154,7 +159,7 @@ class CobrancaServiceTest {
 
     @Test
     void deveCobrarViaWalletPayComSucesso() {
-        ResultadoCobranca resultado = service.cobrar(pedido, FormaPagamento.WALLET_PAY, false, false, false, false);
+        ResultadoCobranca resultado = service.cobrar(pedido, FormaPagamento.WALLET_PAY, new TaxaBase());
 
         assertEquals("APROVADA", resultado.getStatus());
         assertEquals(FormaPagamento.WALLET_PAY, resultado.getFormaPagamento());
@@ -164,7 +169,7 @@ class CobrancaServiceTest {
 
     @Test
     void deveRetornarReferenciaWalletPayComPrefixoCorreto() {
-        ResultadoCobranca resultado = service.cobrar(pedido, FormaPagamento.WALLET_PAY, false, false, false, false);
+        ResultadoCobranca resultado = service.cobrar(pedido, FormaPagamento.WALLET_PAY, new TaxaBase());
 
         assertNotNull(resultado.getReferencia());
         assertTrue(resultado.getReferencia().startsWith("WPAY-"));
@@ -174,7 +179,7 @@ class CobrancaServiceTest {
     void deveRecusarWalletPayParaValorInteiroAcimaDoLimite() {
         Pedido pedidoCaro = new Pedido("PED-ALTO", "Empresa X", "Servidor Enterprise", 10001.0);
 
-        ResultadoCobranca resultado = service.cobrar(pedidoCaro, FormaPagamento.WALLET_PAY, false, false, false, false);
+        ResultadoCobranca resultado = service.cobrar(pedidoCaro, FormaPagamento.WALLET_PAY, new TaxaBase());
 
         assertEquals("RECUSADA", resultado.getStatus());
         assertEquals(FormaPagamento.WALLET_PAY, resultado.getFormaPagamento());
@@ -184,7 +189,7 @@ class CobrancaServiceTest {
     void deveRecusarWalletPayParaValorDecimalAcimaDoLimite() {
         Pedido pedidoLimite = new Pedido("PED-LIMITE", "Empresa Y", "Equipamento", 10000.50);
 
-        ResultadoCobranca resultado = service.cobrar(pedidoLimite, FormaPagamento.WALLET_PAY, false, false, false, false);
+        ResultadoCobranca resultado = service.cobrar(pedidoLimite, FormaPagamento.WALLET_PAY, new TaxaBase());
 
         assertEquals("RECUSADA", resultado.getStatus());
     }
@@ -193,7 +198,7 @@ class CobrancaServiceTest {
     void deveMapeiarFalhaDoWalletPayComoFalhou() {
         Pedido pedidoZero = new Pedido("PED-ZERO", "Cliente Z", "Item", 0.0);
 
-        ResultadoCobranca resultado = service.cobrar(pedidoZero, FormaPagamento.WALLET_PAY, false, false, false, false);
+        ResultadoCobranca resultado = service.cobrar(pedidoZero, FormaPagamento.WALLET_PAY, new TaxaBase());
 
         assertEquals("FALHOU", resultado.getStatus());
         assertNull(resultado.getReferencia());
