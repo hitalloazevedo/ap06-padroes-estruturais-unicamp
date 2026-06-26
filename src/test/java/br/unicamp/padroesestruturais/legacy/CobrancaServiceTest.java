@@ -116,7 +116,7 @@ class CobrancaServiceTest {
 
     @Test
     void deveAplicarTodosOsAjustesNaOrdemDefinida() {
-        double valor = service.calcularValorFinal(1000.0, new TaxaDescontoFidelidade(new TaxaJurosParcela(new TaxaInternacional(new TaxaSeguro(new TaxaBase())))));
+        double valor = service.calcularValorFinal(1000.0, new TaxaSeguro(new TaxaInternacional(new TaxaJurosParcela(new TaxaDescontoFidelidade(new TaxaBase())))));
 
         double esperado = 1000.0;
         esperado = esperado - (esperado * 0.05);
@@ -126,6 +126,7 @@ class CobrancaServiceTest {
 
         assertEquals(esperado, valor, 0.001);
     }
+
 
     @Test
     void deveCobrarEmLoteParaTodosPedidos() {
@@ -149,7 +150,7 @@ class CobrancaServiceTest {
                 new Pedido("PED-002", "Maria Santos", "Cadeira", 2000.0)
         );
 
-        List<ResultadoCobranca> resultados = service.cobrarEmLote(pedidos, FormaPagamento.BOLETO, new TaxaBase());
+        List<ResultadoCobranca> resultados = service.cobrarEmLote(pedidos, FormaPagamento.BOLETO, new TaxaDescontoFidelidade(new TaxaBase()));
 
         assertEquals(950.0, resultados.get(0).getValorCobrado(), 0.001);
         assertEquals(1900.0, resultados.get(1).getValorCobrado(), 0.001);
