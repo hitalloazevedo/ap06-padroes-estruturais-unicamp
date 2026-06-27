@@ -1,8 +1,14 @@
 package br.unicamp.padroesestruturais.legacy;
 
+import br.unicamp.padroesestruturais.decorators.TaxaBase;
+import br.unicamp.padroesestruturais.decorators.TaxaDescontoFidelidade;
+import br.unicamp.padroesestruturais.decorators.TaxaInternacional;
+import br.unicamp.padroesestruturais.decorators.TaxaJurosParcela;
+import br.unicamp.padroesestruturais.decorators.TaxaSeguro;
 import br.unicamp.padroesestruturais.legacy.domain.FormaPagamento;
 import br.unicamp.padroesestruturais.legacy.domain.Pedido;
 import br.unicamp.padroesestruturais.legacy.domain.ResultadoCobranca;
+import br.unicamp.padroesestruturais.legacy.domain.Taxa;
 import br.unicamp.padroesestruturais.legacy.externo.paysecure.PaySecureGateway;
 import br.unicamp.padroesestruturais.legacy.externo.walletpay.WalletPaySDK;
 import br.unicamp.padroesestruturais.legacy.gateway.BoletoAdapter;
@@ -62,18 +68,36 @@ public class Main {
 
     private static void fluxoCobrancaUnica(Scanner scanner, List<Pedido> pedidos, CobrancaService service) {
         Pedido pedido = selecionarPedido(scanner, pedidos);
-        if (pedido == null) return;
+        if (pedido == null)
+            return;
 
         FormaPagamento forma = selecionarFormaPagamento(scanner);
-        if (forma == null) return;
+        if (forma == null)
+            return;
+
+        Taxa taxa = new TaxaBase();
 
         boolean descontoFidelidade = perguntarSimNao(scanner, "Aplicar desconto de fidelidade (5%)?");
-        boolean jurosParcelamento = perguntarSimNao(scanner, "Aplicar juros de parcelamento (2,99%)?");
-        boolean taxaInternacional = perguntarSimNao(scanner, "Aplicar taxa de operacao internacional (5%)?");
-        boolean seguro = perguntarSimNao(scanner, "Aplicar seguro de transacao (R$ 4,90)?");
+        if (descontoFidelidade) {
+            taxa = new TaxaDescontoFidelidade(taxa);
+        }
 
-        ResultadoCobranca resultado = service.cobrar(pedido, forma,
-                descontoFidelidade, jurosParcelamento, taxaInternacional, seguro);
+        boolean jurosParcelamento = perguntarSimNao(scanner, "Aplicar juros de parcelamento (2,99%)?");
+        if (jurosParcelamento) {
+            taxa = new TaxaJurosParcela(taxa);
+        }
+
+        boolean taxaInternacional = perguntarSimNao(scanner, "Aplicar taxa de operacao internacional (5%)?");
+        if (taxaInternacional) {
+            taxa = new TaxaInternacional(taxa);
+        }
+
+        boolean seguro = perguntarSimNao(scanner, "Aplicar seguro de transacao (R$ 4,90)?");
+        if (seguro) {
+            taxa = new TaxaSeguro(taxa);
+        }
+
+        ResultadoCobranca resultado = service.cobrar(pedido, forma, taxa);
 
         System.out.println();
         exibirResultado(pedido, resultado);
@@ -81,15 +105,32 @@ public class Main {
 
     private static void fluxoCobrancaEmLote(Scanner scanner, List<Pedido> pedidos, CobrancaService service) {
         FormaPagamento forma = selecionarFormaPagamento(scanner);
-        if (forma == null) return;
+        if (forma == null)
+            return;
+
+        Taxa taxa = new TaxaBase();
 
         boolean descontoFidelidade = perguntarSimNao(scanner, "Aplicar desconto de fidelidade (5%)?");
-        boolean jurosParcelamento = perguntarSimNao(scanner, "Aplicar juros de parcelamento (2,99%)?");
-        boolean taxaInternacional = perguntarSimNao(scanner, "Aplicar taxa de operacao internacional (5%)?");
-        boolean seguro = perguntarSimNao(scanner, "Aplicar seguro de transacao (R$ 4,90)?");
+        if (descontoFidelidade) {
+            taxa = new TaxaDescontoFidelidade(taxa);
+        }
 
-        List<ResultadoCobranca> resultados = service.cobrarEmLote(pedidos, forma,
-                descontoFidelidade, jurosParcelamento, taxaInternacional, seguro);
+        boolean jurosParcelamento = perguntarSimNao(scanner, "Aplicar juros de parcelamento (2,99%)?");
+        if (jurosParcelamento) {
+            taxa = new TaxaJurosParcela(taxa);
+        }
+
+        boolean taxaInternacional = perguntarSimNao(scanner, "Aplicar taxa de operacao internacional (5%)?");
+        if (taxaInternacional) {
+            taxa = new TaxaInternacional(taxa);
+        }
+
+        boolean seguro = perguntarSimNao(scanner, "Aplicar seguro de transacao (R$ 4,90)?");
+        if (seguro) {
+            taxa = new TaxaSeguro(taxa);
+        }
+
+        List<ResultadoCobranca> resultados = service.cobrarEmLote(pedidos, forma, taxa);
 
         System.out.println();
         for (int i = 0; i < pedidos.size(); i++) {
